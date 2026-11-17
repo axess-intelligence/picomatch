@@ -220,8 +220,10 @@ describe('special characters', () => {
       assert(!isMatch('my/folder (Work, Accts)', '/*'));
       assert(isMatch('my/folder (Work, Accts)', '*/*'));
       assert(isMatch('my/folder (Work, Accts)', '*/*,*'));
-      assert(isMatch('my/folder (Work, Accts)', '*/*(W*, *)*'));
-      assert(isMatch('my/folder/(Work, Accts)', '**/*(W*, *)*'));
+      assert(!isMatch('my/folder (Work, Accts)', '*/*(W*, *)*'));
+      assert(isMatch('my/folder (Work, Accts)', '*/*(W*, *)*', { maxExtglobRecursion: false }));
+      assert(!isMatch('my/folder/(Work, Accts)', '**/*(W*, *)*'));
+      assert(isMatch('my/folder/(Work, Accts)', '**/*(W*, *)*', { maxExtglobRecursion: false }));
       assert(!isMatch('my/folder/(Work, Accts)', '*/*(W*, *)*'));
       assert(isMatch('foo(bar)baz', 'foo*baz'));
     });

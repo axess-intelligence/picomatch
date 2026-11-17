@@ -4,6 +4,34 @@ const assert = require('assert');
 const { isMatch, makeRe } = require('..');
 
 describe('options.maxExtglobRecursion', () => {
+  it('should bound wildcard repeated extglobs, including alternative and nested bodies', () => {
+    const { execFileSync } = require('child_process');
+    const patterns = ['+(*)b', '+(*a)b', '*(*a)b', '+(*a|b)', '*(*a|b)', '+(@(*a))'];
+    for (const pattern of patterns) {
+      execFileSync(process.execPath, ['-e', `
+        const assert = require('assert');
+        const pm = require(process.cwd());
+        const pattern = process.argv[1];
+        assert.strictEqual(pm.isMatch('a'.repeat(80) + '!', pattern), false);
+        assert.strictEqual(pm.isMatch(pattern, pattern), true);
+      `, pattern], { timeout: 1000 });
+    }
+  });
+
+  it('should preserve escaped and quoted stars and explicit unsafe opt-out', () => {
+    assert(isMatch('***x', '+(\\*)x'));
+    assert(isMatch('***x', '+("*")x'));
+    assert(isMatch('abc', '+(*)c', { maxExtglobRecursion: false }));
+    assert(isMatch('aab', '+(*a)b', { maxExtglobRecursion: false }));
+  });
+
+  it('should literalize wildcard repetition in capture and adjacent-extglob contexts', () => {
+    assert(isMatch('pre+(*a)post', 'pre+(*a)post', { capture: true }));
+    assert(!isMatch('preaaapost', 'pre+(*a)post', { capture: true }));
+    assert(isMatch('+(*a)x', '+(*a)@(x)'));
+    assert(!isMatch('aaax', '+(*a)@(x)'));
+  });
+
   it('should literalize risky repeated extglobs by default', () => {
     assert.strictEqual(
       makeRe('+(a|aa)').source,
@@ -31,7 +59,8 @@ describe('options.maxExtglobRecursion', () => {
     assert(isMatch('foobar', '*(foo|bar)'));
     assert(isMatch('a', '(a|@(b|c)|d)'));
     assert(isMatch('fffooo', '*(*(f)*(o))'));
-    assert(isMatch('abc', '+(*)c'));
+    assert(!isMatch('abc', '+(*)c'));
+    assert(isMatch('+(*)c', '+(*)c'));
   });
 
   it('should allow limited nested repeated extglobs when configured', () => {
