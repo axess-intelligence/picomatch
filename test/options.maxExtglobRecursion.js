@@ -6,7 +6,7 @@ const { isMatch, makeRe } = require('..');
 describe('options.maxExtglobRecursion', () => {
   it('should bound wildcard repeated extglobs, including alternative and nested bodies', () => {
     const { execFileSync } = require('child_process');
-    const patterns = ['+(*)b', '+(*a)b', '*(*a)b', '+(*a|b)', '*(*a|b)', '+(@(*a))', '+(@(*(*(a))))b'];
+    const patterns = ['+(*)b', '+(*a)b', '*(*a)b', '+(*a|b)', '*(*a|b)', '+(@(*a))', '+(@(*(*(a))))b', '+(@(*(a)))b', '+(@(+(a)))b'];
     for (const pattern of patterns) {
       execFileSync(process.execPath, ['-e', `
         const assert = require('assert');
